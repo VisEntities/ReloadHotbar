@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Oxide.Plugins
 {
     [Info("Reload Hotbar", "VisEntities", "1.0.0")]
-    [Description(" ")]
+    [Description("Reload all your hotbar weapons at once with a command.")]
     public class ReloadHotbar : RustPlugin
     {
         #region Fields
