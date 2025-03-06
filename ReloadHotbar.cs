@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Reload Hotbar", "VisEntities", "1.0.0")]
+    [Info("Reload Hotbar", "VisEntities", "1.1.0")]
     [Description("Reload all your hotbar weapons at once with a command.")]
     public class ReloadHotbar : RustPlugin
     {
@@ -174,16 +174,31 @@ namespace Oxide.Plugins
                 if (mainInv == null || mainInv.itemList == null)
                     continue;
 
-                int ammoAvailable = 0;
+                int ammoAvailableMain = 0;
                 foreach (Item ammoItem in mainInv.itemList)
                 {
                     if (ammoItem == null)
                         continue;
 
                     if (ammoItem.info.shortname.Equals(ammoDef.shortname, StringComparison.OrdinalIgnoreCase))
-                        ammoAvailable += ammoItem.amount;
+                        ammoAvailableMain += ammoItem.amount;
                 }
 
+                int ammoAvailableBackpack = 0;
+                Item backpack = player.inventory.GetBackpackWithInventory();
+                if (backpack != null && backpack.contents != null && backpack.contents.itemList != null)
+                {
+                    foreach (Item ammoItem in backpack.contents.itemList)
+                    {
+                        if (ammoItem == null)
+                            continue;
+
+                        if (ammoItem.info.shortname.Equals(ammoDef.shortname, StringComparison.OrdinalIgnoreCase))
+                            ammoAvailableBackpack += ammoItem.amount;
+                    }
+                }
+
+                int ammoAvailable = ammoAvailableMain + ammoAvailableBackpack;
                 int needed = capacity - currentAmmo;
                 if (ammoAvailable <= 0 || needed <= 0)
                     continue;
@@ -208,6 +223,29 @@ namespace Oxide.Plugins
                         }
                         if (remainingToAdd <= 0)
                             break;
+                    }
+                }
+
+                if (remainingToAdd > 0 && backpack != null && backpack.contents != null)
+                {
+                    foreach (Item ammoItem in backpack.contents.itemList.ToArray())
+                    {
+                        if (ammoItem == null)
+                            continue;
+
+                        if (ammoItem.info.shortname.Equals(ammoDef.shortname, StringComparison.OrdinalIgnoreCase))
+                        {
+                            int take = Mathf.Min(remainingToAdd, ammoItem.amount);
+                            remainingToAdd -= take;
+                            ammoItem.UseItem(take);
+                            if (ammoItem.amount <= 0)
+                            {
+                                ammoItem.RemoveFromContainer();
+                                ammoItem.Remove();
+                            }
+                            if (remainingToAdd <= 0)
+                                break;
+                        }
                     }
                 }
 
